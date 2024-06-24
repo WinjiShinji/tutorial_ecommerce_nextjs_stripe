@@ -4,6 +4,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ComponentProps, ReactNode } from "react"
 
+export const dynamic = "force-dynamic"
+
 export function Nav({ children }: { children: ReactNode }) {
   return (
     <nav className="bg-primary text-primary-foreground flex justify-center px-8">
@@ -12,7 +14,7 @@ export function Nav({ children }: { children: ReactNode }) {
   )
 }
 
-// @NOTE: Not importing Link props?
+// @NOTE: Not importing <Link/> props?
 export function NavLink(props: Omit<ComponentProps<typeof Link>, "className">) {
   const pathname = usePathname()
 

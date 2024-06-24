@@ -6,10 +6,11 @@
 
 - Next.js
 - TypeScript
-- Tailwind
-- ShadCn
-- Prisma
 - Stripe
+- Tailwind? (CSS Utility Styling)
+- ShadCn? (Component Library)
+- Prisma? (Database)
+- Zod? (Form Validation)
 
 ## Process
 
