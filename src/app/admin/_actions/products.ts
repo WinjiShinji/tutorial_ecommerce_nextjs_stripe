@@ -18,6 +18,7 @@ const addSchema = z.object({
   image: imageSchema.refine((file) => file.size > 0, "Required"),
 })
 
+// Add Product //
 export async function addProduct(prevStat: unknown, formData: FormData) {
   const result = addSchema.safeParse(Object.fromEntries(formData.entries()))
   if (result.success === false) {
@@ -51,6 +52,61 @@ export async function addProduct(prevStat: unknown, formData: FormData) {
   redirect("/admin/products")
 }
 
+// Edit Product //
+const editSchema = addSchema.extend({
+  file: fileSchema.optional(),
+  image: imageSchema.optional(),
+})
+
+export async function updateProduct(
+  id: string,
+  prevStat: unknown,
+  formData: FormData
+) {
+  const result = editSchema.safeParse(Object.fromEntries(formData.entries()))
+  if (result.success === false) {
+    return result.error.formErrors.fieldErrors
+  }
+
+  const data = result.data
+  const product = await prisma.product.findUnique({ where: { id } })
+
+  if (product == null) return notFound()
+
+  // File Path
+  let filePath = product.filePath
+  if (data.file !== null && data.file.size > 0) {
+    await fs.unlink(product.filePath)
+    filePath = `products/${crypto.randomUUID()}-${data.file.name}`
+    await fs.writeFile(filePath, Buffer.from(await data.file.arrayBuffer()))
+  }
+
+  // Image Path
+  let imagePath = product.imagePath
+  if (data.image !== null && data.image.size > 0) {
+    await fs.unlink(`public${product.filePath}`)
+    imagePath = `/products/${crypto.randomUUID()}-${data.image.name}`
+    await fs.writeFile(
+      `public${imagePath}`,
+      Buffer.from(await data.image.arrayBuffer())
+    )
+  }
+
+  await prisma.product.update({
+    where: { id },
+    data: {
+      name: data.name,
+      description: data.description,
+      priceInCents: data.priceInCents,
+      filePath,
+      imagePath,
+    },
+  })
+
+  redirect("/admin/products")
+}
+
+// Product Availability //
 export async function toggleProductAvailability(
   id: string,
   isAvailableForPurchase: boolean
@@ -63,8 +119,12 @@ export async function toggleProductAvailability(
   })
 }
 
+// Delete Product //
 export async function deleteProduct(id: string) {
   const product = await prisma.product.delete({ where: { id } })
 
   if (product == null) return notFound()
+
+  await fs.unlink(product.filePath)
+  await fs.unlink(`public${product.imagePath}`)
 }
