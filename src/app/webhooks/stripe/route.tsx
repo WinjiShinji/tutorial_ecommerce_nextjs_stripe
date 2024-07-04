@@ -1,9 +1,13 @@
 import prisma from "@/db/prisma"
 import { NextRequest, NextResponse } from "next/server"
+import { Resend } from "resend"
 import Stripe from "stripe"
 
 // Stripe //
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string)
+
+// Resend Email //
+const resend = new Resend(process.env.RESEND_API_KEY as string)
 
 // Stripe Webhook //
 export async function POST(req: NextRequest) {
@@ -46,5 +50,24 @@ export async function POST(req: NextRequest) {
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
       },
     })
+
+    // Send Email //
+    try {
+      const { data, error } = await resend.emails.send({
+        from: `Support <${process.env.RESEND_SENDER_EMAIL}>`,
+        to: email,
+        subject: "Order Confirmation - Test",
+        react: <h1>Order Confirmation - Test</h1>,
+      })
+
+      if (error) {
+        return Response.json({ error }), { status: 500 }
+      }
+
+      return Response.json(data)
+    } catch (err) {
+      return Response.json({ err }), { status: 500 }
+    }
   }
+  return new NextResponse()
 }
